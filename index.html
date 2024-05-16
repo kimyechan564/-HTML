@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>위치 추적 및 긴급 호출</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=7072988b665ab5047528848bbdcb03b3"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #333; /* 진한 회색 배경 */
+    color: white;
+  }
+  #content {
+    text-align: center;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  a, #address {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f44336; /* 붉은색 버튼 배경 */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+  p {
+    margin: 10px 0;
+  }
+</style>
+</head>
+<body>
+<div id="content">
+  <h1>내 위치 확인</h1>
+  <button id="find-me">내 위치 찾기</button>
+  <p id="status"></p>
+  <p>위도: <span id="latitude"></span></p>
+  <p>경도: <span id="longitude"></span></p>
+  <p id="address">주소: <span></span></p>
+  <a href="tel:119" id="call-119" style="display:none;">119에 전화 걸기</a>
+  <div id="map" style="width: 400px; height: 300px; margin: 20px auto;"></div>
+</div>
+
+<script>
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(showPosition, showError, {timeout: 10000});
+  } else { 
+    $('#status').text("Geolocation is not supported by this browser.");
+  }
+}
+
+function showPosition(position) {
+  const lat = position.coords.latitude;
+  const lng = position.coords.longitude;
+  $('#latitude').text(lat);
+  $('#longitude').text(lng);
+  $('#status').text("위치가 확인되었습니다.");
+
+  const container = document.getElementById('map');
+  const options = {
+    center: new kakao.maps.LatLng(lat, lng),
+    level: 3
+  };
+  const map = new kakao.maps.Map(container, options);
+
+  getAddress(lat, lng);
+}
+
+function showError(error) {
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      $('#status').text("User denied the request for Geolocation.");
+      break;
+    case error.POSITION_UNAVAILABLE:
+      $('#status').text("Location information is unavailable.");
+      break;
+    case error.TIMEOUT:
+      $('#status').text("The request to get user location timed out.");
+      break;
+    case error.UNKNOWN_ERROR:
+      $('#status').text("An unknown error occurred.");
+      break;
+  }
+  $('#call-119').hide();
+}
+
+function getAddress(lat, lng) {
+  const geocoder = new kakao.maps.services.Geocoder();
+  const coord = new kakao.maps.LatLng(lat, lng);
+
+  geocoder.coord2RegionCode(coord.getLng(), coord.getLat(), function(result, status) {
+    if (status === kakao.maps.services.Status.OK) {
+      const roadAddress = result[0].address.address_name; // 도로명 주소
+      $('#address').text("주소: " + roadAddress);
+    } else {
+      $('#address').text("주소 정보를 가져오는 데 실패했습니다.");
+    }
+  });
+}
+
+$(document).ready(function(){
+  $('#find-me').click(function(){
+    getLocation();
+  });
+});
+</script>
+  <script src="script.js"></script>
+</body>
+</html>
